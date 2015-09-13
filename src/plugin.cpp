@@ -15,10 +15,11 @@ class VariableNameVisitor
   explicit VariableNameVisitor(clang::ASTContext* context) : context(context) {}
 
   bool VisitDecl(clang::Decl* declaration) const {
-    llvm::errs() << "Visiting cxx declaration\n";
-    if (const clang::NamedDecl* namedDeclaration =
-            clang::dyn_cast<clang::NamedDecl>(declaration)) {
-      llvm::errs() << namedDeclaration->getNameAsString() << "\n";
+    if (const clang::VarDecl* variableDeclaration =
+            clang::dyn_cast<clang::VarDecl>(declaration)) {
+      llvm::errs() << variableDeclaration->getNameAsString() << "\n";
+      auto type = variableDeclaration->getType();
+      type->dump();
     }
     return true;
   }
@@ -34,18 +35,6 @@ class VariableNameDumperConsumer : public clang::ASTConsumer {
   VariableNameDumperConsumer(clang::CompilerInstance& instance)
       : instance(instance), visitor(&instance.getASTContext()) {
     llvm::errs() << "Consumer online\n";
-  }
-
-  bool HandleTopLevelDecl(clang::DeclGroupRef DG) override {
-    llvm::errs() << "Top level called\n";
-    for (const clang::Decl* declaration : DG) {
-      llvm::errs() << "Element of group\n";
-      if (const clang::NamedDecl* nd =
-              clang::dyn_cast<clang::NamedDecl>(declaration)) {
-        llvm::errs() << nd->getNameAsString() << "\n";
-      }
-    }
-    return true;
   }
 
   void HandleTranslationUnit(clang::ASTContext& context) override {
