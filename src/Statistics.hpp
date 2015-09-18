@@ -7,6 +7,17 @@
 #include <map>
 #include <utility>
 
+#define BOOST_NO_RTTI
+#define BOOST_NO_TYPEID
+#define BOOST_NO_EXCEPTIONS
+#define BOOST_EXCEPTION_DISABLE
+
+#include <boost/property_tree/ptree_fwd.hpp>
+#undef BOOST_PROPERTY_TREE_THROW
+#define BOOST_PROPERTY_TREE_THROW(e)
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
 class Statistics {
     using typeType = std::string;
     using nameType = std::string;
@@ -17,7 +28,7 @@ public:
     void addVariableOccurence(const clang::VarDecl* declaration) {
         nameType name_ = declaration->getNameAsString();
 
-        clang::QualType  qualifiedType = declaration->getType();
+        clang::QualType qualifiedType = declaration->getType();
         typeType type_ = qualifiedType.getAsString();
 
         ++storage[type_][name_];
@@ -28,25 +39,30 @@ public:
     }
 
     void dumpToFile(const std::string& filename) const {
-        std::ofstream file;
-        file.open(filename);
+        boost::property_tree::ptree ptree;
 
-        file << "{\n";
-        bool firstType = true;
-        for(const auto& type: storage) {
-            if (!firstType) file << ",\n";
-            firstType = false;
-            file << "    " << '"' << type.first << "\": {";
+        const static std::string keyName = "Occurences";
 
-            for(const auto& names: type.second) {
-                file << '"' << names.first << '"' << ": " << names.second;
+        for (const auto& type : storage) {
+            const auto& typeName = type.first;
+            const auto& occurences = type.second;
+
+            boost::property_tree::ptree typeTree;
+
+            for (const auto& occurence : occurences) {
+                const auto& variableName = occurence.first;
+                const auto& nameCount = occurence.second;
+
+                typeTree.put(variableName, nameCount);
             }
 
-            file << "}";
+            ptree.put_child(typeName, typeTree);
         }
-        file << "\n}\n";
-    }
 
+        std::ofstream outputFile("varnamedump.json");
+
+        boost::property_tree::write_json(outputFile, ptree);
+    }
 };
 
-#endif // CLANGDUMPNAMES_STATISTICS_HPP
+#endif  // CLANGDUMPNAMES_STATISTICS_HPP

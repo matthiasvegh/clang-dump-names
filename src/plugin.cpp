@@ -7,9 +7,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/ADT/STLExtras.h"
 
-#define BOOST_NO_RTTI
-#define BOOST_NO_TYPEID
-
 #include "Statistics.hpp"
 
 namespace {
