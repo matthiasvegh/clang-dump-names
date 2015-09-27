@@ -35,7 +35,24 @@ public:
     }
 
     static Statistics createFromDump(const std::string& filename) {
-        return Statistics{};
+        Statistics statistics;
+        boost::property_tree::ptree ptree;
+
+        boost::property_tree::read_json(filename, ptree);
+
+        for (const auto& variableOccurence : ptree) {
+            const auto& typeName = variableOccurence.first;
+            const auto& names = variableOccurence.second;
+
+            for (const auto& name : names) {
+                const auto& usedName = name.first;
+                const auto& useCount = name.second.get_value<countType>();
+                statistics.storage[typeName][usedName] = useCount;
+            }
+
+        }
+
+        return statistics;
     }
 
     void dumpToFile(const std::string& filename) const {
