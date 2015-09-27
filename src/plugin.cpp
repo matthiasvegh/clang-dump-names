@@ -40,10 +40,10 @@ class VariableNameDumperConsumer : public clang::ASTConsumer {
 
   public:
   VariableNameDumperConsumer(clang::CompilerInstance& instance,
-                             Statistics& statistics)
+                             Statistics statistics)
       : instance(instance),
-        visitor(&instance.getASTContext(), statistics),
-        statistics(statistics) {}
+        statistics(std::move(statistics)),
+        visitor(&instance.getASTContext(), this->statistics) {}
 
   void HandleTranslationUnit(clang::ASTContext& context) override {
     visitor.TraverseDecl(context.getTranslationUnitDecl());
@@ -51,19 +51,16 @@ class VariableNameDumperConsumer : public clang::ASTConsumer {
   }
 
   private:
+  Statistics statistics;
   VariableNameVisitor visitor;
-  Statistics& statistics;
 };
-
-static Statistics _global_statistics =
-    Statistics::createFromDump("varnamedump.json");
-
 
 class VariableNameDumperAction : public clang::PluginASTAction {
   public:
   clang::ASTConsumer* CreateASTConsumer(clang::CompilerInstance& ci,
                                         llvm::StringRef) override {
-    return new VariableNameDumperConsumer(ci, _global_statistics);
+    auto statistics = Statistics::createFromDump("varnamedump.json");
+    return new VariableNameDumperConsumer(ci, std::move(statistics));
   }
 
   bool ParseArgs(const clang::CompilerInstance& /*ci*/,
