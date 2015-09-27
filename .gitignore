@@ -2,3 +2,8 @@
 *.o
 
 *.swp
+
+test.cpp
+compile_commands.json
+varnamedump.json
+*ycm*
